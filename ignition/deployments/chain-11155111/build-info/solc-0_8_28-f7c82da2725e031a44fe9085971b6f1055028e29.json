@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-f7c82da2725e031a44fe9085971b6f1055028e29",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/Voting.sol": "project/contracts/Voting.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Voting.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ncontract Voting {\n    struct Proposal {\n        uint id;\n        string description;\n        uint voteCount;\n        uint deadline;\n        bool closed;\n    }\n\n    mapping(uint => Proposal) public proposals;\n    mapping(address => mapping(uint => bool)) public hasVoted;\n    uint public proposalCount;\n\n    event ProposalCreated(uint id, string description, uint deadline);\n    event Voted(address voter, uint proposalId);\n\n    function createProposal(string memory _desc, uint _duration) external {\n        proposalCount++;\n        proposals[proposalCount] = Proposal(\n            proposalCount,\n            _desc,\n            0,\n            block.timestamp + _duration,\n            false\n        );\n        emit ProposalCreated(proposalCount, _desc, block.timestamp + _duration);\n    }\n\n    function vote(uint _proposalId) external {\n        Proposal storage prop = proposals[_proposalId];\n        require(block.timestamp < prop.deadline, \"Voting closed\");\n        require(!hasVoted[msg.sender][_proposalId], \"Already voted\");\n\n        prop.voteCount += 1;\n        hasVoted[msg.sender][_proposalId] = true;\n        emit Voted(msg.sender, _proposalId);\n    }\n\n    function closeVote(uint _proposalId) external {\n        Proposal storage prop = proposals[_proposalId];\n        require(block.timestamp >= prop.deadline, \"Too early\");\n        prop.closed = true;\n    }\n\n    function getProposals() external view returns (Proposal[] memory) {\n        Proposal[] memory all = new Proposal[](proposalCount);\n        for (uint i = 1; i <= proposalCount; i++) {\n            all[i - 1] = proposals[i];\n        }\n        return all;\n    }\n}\n"
+      }
+    }
+  }
+}
