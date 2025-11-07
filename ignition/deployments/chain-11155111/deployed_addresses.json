@@ -1,3 +1,6 @@
 {
-  "VotingModule#Voting": "0xbbB231d7F0100f3Af5DC556Cc82d71B2dF1965B5"
+  "VotingModule#Voting": "0xbbB231d7F0100f3Af5DC556Cc82d71B2dF1965B5",
+  "ProxyVotingModule#VotingV1": "0xf4FBEbe8A7bEFDF147B8978d94E602B0EE8F9951",
+  "ProxyVotingModule#UUPSProxy": "0xE93AEaf2e54150Cf49522b7789e6CD9c363C7c2C",
+  "VotingV2Module#VotingV2": "0xADa49d2A6fF65E962487b0ce8f0444998eE73f1D"
 }

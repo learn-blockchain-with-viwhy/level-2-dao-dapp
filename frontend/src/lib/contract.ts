@@ -1,6 +1,6 @@
 // Contract address and ABI
-export const VOTING_CONTRACT_ADDRESS =
-    '0xbbB231d7F0100f3Af5DC556Cc82d71B2dF1965B5' as `0x${string}`;
+export const VOTING_CONTRACT_ADDRESS = process.env
+    .NEXT_PUBLIC_VOTING_CONTRACT_ADDRESS as `0x${string}`;
 
 export const VOTING_ABI = [
     {

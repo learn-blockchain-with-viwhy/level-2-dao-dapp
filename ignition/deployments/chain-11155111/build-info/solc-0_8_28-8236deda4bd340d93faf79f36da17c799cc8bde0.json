@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-8236deda4bd340d93faf79f36da17c799cc8bde0",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/VotingV1.sol": "project/contracts/VotingV1.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/VotingV1.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n/**\n * @title VotingV1\n * @dev Upgradeable Voting Contract using UUPS Proxy Pattern\n * This is the implementation contract that can be upgraded\n */\ncontract VotingV1 {\n    struct Proposal {\n        uint id;\n        string description;\n        uint voteCount;\n        uint deadline;\n        bool closed;\n    }\n\n    mapping(uint => Proposal) public proposals;\n    mapping(address => mapping(uint => bool)) public hasVoted;\n    uint public proposalCount;\n\n    // Storage slot for proxy admin (to avoid storage collision)\n    address private _admin;\n\n    // Storage slot for implementation address (UUPS pattern)\n    address private _implementation;\n\n    event ProposalCreated(uint id, string description, uint deadline);\n    event Voted(address voter, uint proposalId);\n    event Upgraded(address newImplementation);\n\n    // Modifier to ensure only admin can upgrade\n    modifier onlyAdmin() {\n        require(msg.sender == _admin, 'Only admin can call this function');\n        _;\n    }\n\n    // Initialize function (called once via proxy)\n    function initialize() external {\n        require(_admin == address(0), 'Already initialized');\n        // Admin will be set by proxy, we just mark as initialized\n        // In a real scenario, you might want to set an initial admin here\n    }\n\n    function createProposal(string memory _desc, uint _duration) external {\n        proposalCount++;\n        proposals[proposalCount] = Proposal(\n            proposalCount,\n            _desc,\n            0,\n            block.timestamp + _duration,\n            false\n        );\n        emit ProposalCreated(proposalCount, _desc, block.timestamp + _duration);\n    }\n\n    function vote(uint _proposalId) external {\n        Proposal storage prop = proposals[_proposalId];\n        require(block.timestamp < prop.deadline, 'Voting closed');\n        require(!hasVoted[msg.sender][_proposalId], 'Already voted');\n\n        prop.voteCount += 1;\n        hasVoted[msg.sender][_proposalId] = true;\n        emit Voted(msg.sender, _proposalId);\n    }\n\n    function closeVote(uint _proposalId) external {\n        Proposal storage prop = proposals[_proposalId];\n        require(block.timestamp >= prop.deadline, 'Too early');\n        prop.closed = true;\n    }\n\n    function getProposals() external view returns (Proposal[] memory) {\n        Proposal[] memory all = new Proposal[](proposalCount);\n        for (uint i = 1; i <= proposalCount; i++) {\n            all[i - 1] = proposals[i];\n        }\n        return all;\n    }\n\n    // UUPS upgrade function - must be implemented in upgradeable contracts\n    function upgradeTo(address newImplementation) external onlyAdmin {\n        require(newImplementation != address(0), 'Invalid implementation');\n        _implementation = newImplementation;\n        emit Upgraded(newImplementation);\n    }\n\n    // Get current implementation address\n    function getImplementation() external view returns (address) {\n        return _implementation;\n    }\n\n    // Get admin address\n    function getAdmin() external view returns (address) {\n        return _admin;\n    }\n}\n"
+      }
+    }
+  }
+}

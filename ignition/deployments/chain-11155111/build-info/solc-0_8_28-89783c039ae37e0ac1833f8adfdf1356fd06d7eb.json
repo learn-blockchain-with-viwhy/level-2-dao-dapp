@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-89783c039ae37e0ac1833f8adfdf1356fd06d7eb",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/UUPSProxy.sol": "project/contracts/UUPSProxy.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/UUPSProxy.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\n/**\n * @title UUPSProxy\n * @dev Simple UUPS (Universal Upgradeable Proxy Standard) Proxy Contract\n * This proxy delegates all calls to the implementation contract\n */\ncontract UUPSProxy {\n    // Storage slot for implementation address (EIP-1967)\n    bytes32 private constant IMPLEMENTATION_SLOT =\n        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;\n\n    // Storage slot for admin address (EIP-1967)\n    bytes32 private constant ADMIN_SLOT =\n        0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;\n\n    constructor(address implementation, address admin, bytes memory initData) {\n        // Set implementation address\n        bytes32 slot = IMPLEMENTATION_SLOT;\n        assembly {\n            sstore(slot, implementation)\n        }\n\n        // Set admin address\n        slot = ADMIN_SLOT;\n        assembly {\n            sstore(slot, admin)\n        }\n\n        // Call initialize function on implementation if initData is provided\n        if (initData.length > 0) {\n            (bool success, bytes memory returnData) = implementation\n                .delegatecall(initData);\n            if (!success) {\n                if (returnData.length > 0) {\n                    assembly {\n                        let returndata_size := mload(returnData)\n                        revert(add(32, returnData), returndata_size)\n                    }\n                } else {\n                    revert('Initialization failed');\n                }\n            }\n        }\n    }\n\n    /**\n     * @dev Upgrade the implementation contract (only admin)\n     */\n    function upgradeTo(address newImplementation) external {\n        require(msg.sender == _getAdmin(), 'Only admin can upgrade');\n        require(newImplementation != address(0), 'Invalid implementation');\n\n        bytes32 slot = IMPLEMENTATION_SLOT;\n        assembly {\n            sstore(slot, newImplementation)\n        }\n\n        // Call upgradeTo on new implementation to emit event\n        (bool success, bytes memory returnData) = newImplementation\n            .delegatecall(\n                abi.encodeWithSignature('upgradeTo(address)', newImplementation)\n            );\n        if (!success) {\n            if (returnData.length > 0) {\n                assembly {\n                    let returndata_size := mload(returnData)\n                    revert(add(32, returnData), returndata_size)\n                }\n            } else {\n                revert('Upgrade failed');\n            }\n        }\n    }\n\n    /**\n     * @dev Fallback function that delegates calls to the implementation contract\n     */\n    fallback() external payable {\n        address implementation = _getImplementation();\n\n        assembly {\n            // Copy msg.data to memory\n            calldatacopy(0, 0, calldatasize())\n\n            // Call implementation contract\n            let result := delegatecall(\n                gas(),\n                implementation,\n                0,\n                calldatasize(),\n                0,\n                0\n            )\n\n            // Copy return data to memory\n            returndatacopy(0, 0, returndatasize())\n\n            // Return or revert\n            switch result\n            case 0 {\n                revert(0, returndatasize())\n            }\n            default {\n                return(0, returndatasize())\n            }\n        }\n    }\n\n    /**\n     * @dev Receive function for receiving Ether\n     */\n    receive() external payable {\n        // Delegate to implementation if it has a receive function\n        address implementation = _getImplementation();\n        assembly {\n            calldatacopy(0, 0, calldatasize())\n            let result := delegatecall(\n                gas(),\n                implementation,\n                0,\n                calldatasize(),\n                0,\n                0\n            )\n            returndatacopy(0, 0, returndatasize())\n            switch result\n            case 0 {\n                revert(0, returndatasize())\n            }\n            default {\n                return(0, returndatasize())\n            }\n        }\n    }\n\n    /**\n     * @dev Get the current implementation address\n     */\n    function _getImplementation() internal view returns (address impl) {\n        bytes32 slot = IMPLEMENTATION_SLOT;\n        assembly {\n            impl := sload(slot)\n        }\n    }\n\n    /**\n     * @dev Get the current admin address\n     */\n    function _getAdmin() internal view returns (address admin) {\n        bytes32 slot = ADMIN_SLOT;\n        assembly {\n            admin := sload(slot)\n        }\n    }\n\n    /**\n     * @dev Get implementation address (public view function)\n     */\n    function getImplementation() external view returns (address) {\n        return _getImplementation();\n    }\n\n    /**\n     * @dev Get admin address (public view function)\n     */\n    function getAdmin() external view returns (address) {\n        return _getAdmin();\n    }\n}\n"
+      }
+    }
+  }
+}
